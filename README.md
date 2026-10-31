@@ -23,7 +23,7 @@ Python + FastAPI                         (model, :8000) ──► mock provider,
                                                             OpenAI-compatible LLM server
 ```
 
-- **web:** Next.js App Router frontend.
+- **web:** Next.js App Router frontend. A route handler forwards `/api/*` to the API, so the browser only ever talks to one origin.
 - **api:** owns all data. Validates input with Zod, stores personas, conversations, messages and consistency runs in Postgres, and calls the model service. If the model service fails, the API returns 502 and saves nothing.
 - **model-service:** builds the system prompt from the persona, calls the LLM and computes consistency scores. The default `mock` provider needs no API key, so the app and CI run anywhere. Set `LLM_PROVIDER=openai` to use OpenAI, Ollama, vLLM, LM Studio, or a LoRA fine-tune served behind an OpenAI-compatible endpoint.
 
@@ -47,7 +47,7 @@ cd model-service && pip install -r requirements-dev.txt && uvicorn app.main:app 
 # api (creates its tables on start)
 cd api && npm install && DATABASE_URL=postgres://user:pass@localhost:5432/persona_studio npm run dev
 
-# web
+# web (API_URL defaults to http://localhost:4000)
 cd web && npm install && npm run dev
 ```
 
@@ -74,4 +74,12 @@ GitHub Actions runs all three on every push and pull request, applies the migrat
 
 ## Deploying
 
-The repo deploys as-is to any host that runs Docker Compose (a $5 VPS works). For managed hosting, deploy `web` to Vercel, `api` and `model-service` to Render or Fly.io, and use a managed Postgres such as Neon or Supabase. Set `NEXT_PUBLIC_API_URL` at web build time and `CORS_ORIGIN` on the API to the web URL.
+`render.yaml` deploys all three services to Render's free plan, with the database on Neon's free Postgres.
+
+1. Create a free project at [neon.com](https://neon.com) and copy its connection string.
+2. In Render, choose **New → Blueprint**, pick this repo, and paste the Neon string when it asks for `DATABASE_URL`.
+3. Open the `persona-studio-web` URL Render gives you.
+
+The browser only talks to the website. It forwards `/api/*` to the API over Render's private network, so the API and model service never need public URLs or CORS. Free Render services sleep after 15 idle minutes, so the first request after a break takes about a minute.
+
+Any host that runs Docker Compose works too (a $5 VPS is enough).

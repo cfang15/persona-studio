@@ -1,0 +1,46 @@
+# Render Blueprint: deploys the website, API and model service on Render's free plan.
+# The database is a free Neon Postgres (Render's free Postgres is deleted after 30 days);
+# Render asks you for its connection string when you create the Blueprint.
+services:
+  - type: web
+    name: persona-studio-web
+    runtime: docker
+    plan: free
+    rootDir: web
+    dockerfilePath: ./web/Dockerfile
+    dockerContext: ./web
+    envVars:
+      - key: API_URL
+        fromService:
+          type: web
+          name: persona-studio-api
+          property: hostport
+
+  - type: web
+    name: persona-studio-api
+    runtime: docker
+    plan: free
+    rootDir: api
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste your Neon connection string when prompted
+      - key: MODEL_SERVICE_URL
+        fromService:
+          type: web
+          name: persona-studio-model
+          property: hostport
+
+  - type: web
+    name: persona-studio-model
+    runtime: docker
+    plan: free
+    rootDir: model-service
+    dockerfilePath: ./model-service/Dockerfile
+    dockerContext: ./model-service
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_PROVIDER
+        value: mock # change to "openai" and add LLM_API_KEY to use a real model

@@ -1,4 +1,5 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+/** Same-origin path; app/api/[...path]/route.ts forwards it to the backend API. */
+const API_URL = "/api";
 
 export interface Persona {
   id: number;
@@ -46,7 +47,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       headers: { "Content-Type": "application/json", ...init?.headers },
     });
   } catch {
-    throw new ApiError(`Can't reach the API at ${API_URL}. Check that it's running.`);
+    throw new ApiError("Can't reach the server. Check your connection and try again.");
   }
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => ({}));

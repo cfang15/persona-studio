@@ -29,7 +29,6 @@ services:
     environment:
       DATABASE_URL: postgres://persona:persona@db:5432/persona_studio
       MODEL_SERVICE_URL: http://model:8000
-      CORS_ORIGIN: http://localhost:3000
     depends_on:
       db:
         condition: service_healthy
@@ -39,10 +38,9 @@ services:
       - "4000:4000"
 
   web:
-    build:
-      context: ./web
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:4000
+    build: ./web
+    environment:
+      API_URL: http://api:4000
     depends_on:
       - api
     ports:
